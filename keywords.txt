@@ -1,0 +1,27 @@
+#######################################
+# Syntax Coloring Map For EventLinkInterrupt.h
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+attachEventLinkInterrupt	KEYWORD2
+resetEventLink	KEYWORD2
+detachEventLinkInterrupt	KEYWORD2
+reattachEventLinkInterrupt	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+Timer1	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
