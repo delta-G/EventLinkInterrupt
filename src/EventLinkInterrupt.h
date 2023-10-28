@@ -22,9 +22,15 @@ EventLinkInterrupt.h
 #ifndef EVENT_LINK_INTERRUPT_H
 #define EVENT_LINK_INTERRUPT_H
 
+#if !defined(ARDUINO_UNOR4_MINIMA) && !defined(ARDUINO_UNOR4_WIFI)
+#error This library is only supported on the UNO-R4 boards.  It does not support older UNO boards.
+#endif
+
 #include "Arduino.h"
 #include "IRQManager.h"
 #include "RTC.h"
+
+
 
 #define NUMBER_OF_ILC_SLOTS 32
 
