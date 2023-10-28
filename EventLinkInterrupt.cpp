@@ -41,7 +41,7 @@ int attachEventLinkInterrupt(uint8_t eventCode, Irq_f func /*= nullptr*/) {
 
     if (IRQManager::getInstance().addPeripheral(IRQ_RTC, &rtc_irq_cfg)) {
       // Find the event link we just got
-      for (uint8_t i = 0; i < 32; i++) {
+      for (uint8_t i = 0; i < NUMBER_OF_ILC_SLOTS; i++) {
         volatile uint32_t val = R_ICU->IELSR[i];
         // RTC_CUP event code is 0x28
         if ((val & 0xFF) == 0x28) {
@@ -58,10 +58,9 @@ int attachEventLinkInterrupt(uint8_t eventCode, Irq_f func /*= nullptr*/) {
         __disable_irq();
         // replace the rtc_carry_isr handler with our own
         *(irq_ptr + eventLinkIndex) = (uint32_t)func;
-        // replace the event link code (0x47 is CAC_FERRI)
+        // replace the event link code 
         R_ICU->IELSR[eventLinkIndex] = eventCode;
         // clear any pending flags
-        R_CAC->CAICR |= (R_CAC_CAICR_FERRFCL_Msk);
         R_ICU->IELSR[eventLinkIndex] &= ~(R_ICU_IELSR_IR_Msk);
         __enable_irq();
         // Take the carry irq back out of the rt configuration
@@ -73,7 +72,31 @@ int attachEventLinkInterrupt(uint8_t eventCode, Irq_f func /*= nullptr*/) {
   return eventLinkIndex;
 }
 
-void resetEventLink(int eventLinkIndex) {
-  R_ICU->IELSR[eventLinkIndex] &= ~(R_ICU_IELSR_IR_Msk);
+int reattachEventLinkInterrupt(uint8_t eventCode, int eventLinkIndex) {
+  int rv = -1;
+  __disable_irq();
+  if ((eventLinkIndex >= 0) && (eventLinkIndex < NUMBER_OF_ILC_SLOTS)){
+    // replace the event link code
+    R_ICU->IELSR[eventLinkIndex] = eventCode;
+    // clear any pending flags
+    R_ICU->IELSR[eventLinkIndex] &= ~(R_ICU_IELSR_IR_Msk);
+    __enable_irq();
+    rv = eventLinkIndex;
+  }
+  return rv;
 }
+
+void detachEventLinkInterrupt(int eventLinkIndex) {
+  if ((eventLinkIndex >= 0) && (eventLinkIndex < NUMBER_OF_ILC_SLOTS)){
+    R_ICU->IELSR[eventLinkIndex] = 0;
+  }
+}
+
+void resetEventLink(int eventLinkIndex) {
+  if ((eventLinkIndex >= 0) && (eventLinkIndex < NUMBER_OF_ILC_SLOTS)){
+    R_ICU->IELSR[eventLinkIndex] &= ~(R_ICU_IELSR_IR_Msk);
+  }
+}
+
+
 

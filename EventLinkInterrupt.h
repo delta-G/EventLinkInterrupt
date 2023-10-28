@@ -26,10 +26,12 @@ EventLinkInterrupt.h
 #include "IRQManager.h"
 #include "RTC.h"
 
+#define NUMBER_OF_ILC_SLOTS 32
+
 /*
 *
 *  attachEventLinkInterrupt(uint8_t eventCode, Irq_f func);
-*  attaches an interrupt handler in the event link controller
+*  attaches an interrupt handler in the interrupt link controller
 *
 *  eventCode - The 8 bit code for the event link (See User's Manual Table 13.4)
 *  func - void () function to attach as a handler. 
@@ -39,6 +41,22 @@ EventLinkInterrupt.h
 */
 int attachEventLinkInterrupt(uint8_t eventCode, Irq_f func = nullptr);
 
+
+/*
+*
+*  reattachEventLinkInterrupt(uint8_t eventCode, int index);
+*  reattaches an interrupt handler in the interrupt link controller
+*  to an index that was previously detached.  Will re-use the 
+*  same handler as the vector table isn't changed
+*
+*  eventCode - The 8 bit code for the event link (See User's Manual Table 13.4)
+*  eventLinkIndex - an event link index previously returned by attachInterrupt.   
+*
+*  returns int - the index of the event link that was used. 
+*                you will need this in the ISR to reset the interrupt
+*/
+int reattachEventLinkInterrupt(uint8_t eventCode, int eventLinkIndex);
+
 /*
 *
 *  resetEventLink(int eventLinkIndex);
@@ -46,12 +64,23 @@ int attachEventLinkInterrupt(uint8_t eventCode, Irq_f func = nullptr);
 *  This must be called from the interrupt handler or the board will hang
 *  There is probably also another interrupt flag for the event you linked
 *
-*  eventLinkIndex - The index of the event in the ELC.
+*  eventLinkIndex - The index of the interrupt in the ILC.
 *                   returned from attachEventLinkInterrupt
 *
 */
 void resetEventLink(int eventLinkIndex);
 
-
+/*
+*
+*  detachEventLinkInterrupt(int eventLinkIndex);
+*  detaches the interrupt from the ILC but leaves the 
+*  pointer in the vector table
+*  use reattachEventLinkInterrupt(eventLinkIndex); to restart it
+*
+*  eventLinkIndex - The index of the interrupt in the ILC.
+*                   returned from attachEventLinkInterrupt
+*
+*/
+void detachEventLinkInterrupt(int eventLinkIndex);
 
 #endif  // defined EVENT_LINK_INTERRUPT_H
