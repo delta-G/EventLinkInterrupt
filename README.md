@@ -1,51 +1,50 @@
 # EventLinkInterrupt
 
-> This code is to allow use of event link interrupts on the UNO-R4 boards.
-> It works by hijacking the mechanism in IRQManager class that attaches the RTC Carry interrupt. 
-> This code includes RTC.h from the core in order to get the RTC configuration struct.  I'm not sure what that will break in your code.
+> This library is deprecated. <br> The Arduino Renesas Core now includes code that makes this library redundant. <br> Here is an example that uses the new core functions:
 
-<br><br><br>
+```
+#include "IRQManager.h"
 
+volatile bool interruptFired = false;
 
-## **It includes four functions:**
+GenericIrqCfg_t cfg;
 
-## int attachEventLinkInterrupt(uint8_t eventCode, Irq_f func);
- 
-> attaches an interrupt handler in the Interrupt Link Controller
->
->> **eventCode** - The 8 bit code for the event link (See User's Manual Table 13.4)
->
->> **func** - void () function to attach as a handler. 
->
->> returns int - the index of the event link that was used. You need to save this to call resetEventLink in the interrupt handler.
+void setup() {
 
-## void detachEventLinkInterrupt(int eventLinkInterrupt);
+  Serial.begin(115200);
+  while (!Serial)
+    ;
+  Serial.println("\n\n *** " __FILE__ " ***\n\n");
 
-> detaches an interrupt by clearing its entry in the IELSR registers
-> This does not remove the entry from the vector table, so you can
-> reattach an interrupt to the same handler with reattachEventLinkInterrupt
-> This is necessary since the IRQManager will not re-use slots
->
->> **eventLinkIndex** - the index of the event link to dettach
+  R_ICU->IRQCR[0] = 0xB0;  // Configure some peripheral for an interrupt
 
-## int reattachEventLinkInterrupt(uint8_t eventCode, int eventLinkIndex);
+  // Create a generic interrupt configuration and attach
+  cfg.irq = FSP_INVALID_VECTOR;
+  cfg.ipl = 12;
+  cfg.event = ELC_EVENT_ICU_IRQ0;  
+  IRQManager::getInstance().addGenericInterrupt(cfg, Myirq0_callback);
 
->  reattach an interrupt handler that was prevously detached with detachEventLinkInterrupt
-> 
->>  **eventCode** - The 8 bit code for the event link (See User's Manual Table 13.4)
->
->>  **eventLinkIndex** - the index of the event link to reattach
->
->>  returns int - the index of the event link that was used. 
+  // Enable the interrupt at the peripheral. 
+  R_PFS->PORT[1].PIN[5].PmnPFS = (1 << R_PFS_PORT_PIN_PmnPFS_PCR_Pos) | (1 << R_PFS_PORT_PIN_PmnPFS_ISEL_Pos);
 
-## void resetEventLink(int eventLinkIndex);
- 
-> clears the IR flag in the event link register to clear the interrupt
-> This must be called from the interrupt handler or the board will hang
-> There is probably also another interrupt flag for the event you linked
-> in the registers for the peripheral you are linking
-> 
->> **eventLinkIndex** - The index of the event
+}
+
+void loop() {
+  Serial.println("Loop Running");
+  delay(500);
+
+  if (interruptFired) {
+    interruptFired = false;
+    Serial.println("Interrupt Fired");
+  }
+}
+
+void Myirq0_callback() {
+  R_ICU->IELSR[cfg.irq] &= ~(R_ICU_IELSR_IR_Msk);
+  interruptFired = true;
+}
+```
+
  
                  
 
